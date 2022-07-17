@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import os
+import sys
+import traceback
+import json
+
+from algorithm.functions import train_fn
+
+prefix = "/opt/ml"
+
+input_path = os.path.join(prefix, "input/data")
+output_path = os.path.join(prefix, "output")
+model_path = os.path.join(prefix, "model")
+param_path = os.path.join(prefix, "input/config/hyperparameters.json")
+
+channel_name = "train"
+training_path = os.path.join(input_path, channel_name)
+
+def train():
+  print("Training starts!")
+
+  try:
+
+    with open(param_path, "r") as tc:
+      hyper = json.load(tc)
+
+    input_files = [os.path.join(training_path, file) for file in os.listdir(training_path)]
+
+    if len(input_files) == 0:
+      raise ValueError("No training dataset were found for {} channel".format(channel_name))
+
+    train_fn(input_files, hyper, model_path)
+
+    print("Training complete!")
+
+  except Exception as e:
+    trc = traceback.format_exc()
+    with open(os.path.join(output_path, "failure"), "w") as s:
+      msg = "Exception during training: ".format(str(e), "\n", trc)
+      s.write(msg)
+      print(msg, file=sys.stderr)
+      sys.exit(255)
+
+if __name__ == "__main__":
+  train()
+  sys.exit(0) # zero exit code meaning, OK!
